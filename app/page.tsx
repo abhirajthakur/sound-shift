@@ -1,10 +1,11 @@
 "use client";
 
-import { motion } from "motion/react";
-import Link from "next/link";
 import { LoginButtons } from "@/components/login-buttons";
 import { TransferLayout } from "@/components/transfer/transfer-layout";
 import { useAuthState } from "@/hooks/use-auth-state";
+import { motion } from "motion/react";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   const { isSpotifyLoggedIn, isYoutubeLoggedIn } = useAuthState();
@@ -26,9 +27,17 @@ export default function Home() {
         {!isFullyAuthenticated ? (
           <div className="glass-card p-4 md:p-8 rounded-2xl">
             <div className="text-center mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold gradient-text from-blue-400 to-purple-400 mb-4">
-                SoundShift
-              </h1>
+              <div className="flex items-center justify-center">
+                <Image
+                  src="/logo.svg"
+                  alt="SoundShift Logo"
+                  width={48}
+                  height={48}
+                />
+                <h1 className="text-3xl md:text-4xl font-bold gradient-text from-blue-400 to-purple-400 mb-2">
+                  SoundShift
+                </h1>
+              </div>
               <p className="text-base md:text-lg text-white/60">
                 Transfer your playlists from Spotify to YouTube Music seamlessly
               </p>
