@@ -1,121 +1,97 @@
 "use client";
 
-import { Alert } from "@/components/ui/alert";
+import { RetryFailedButton } from "@/components//transfer/retry-failed-button";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePlaylistConversion } from "@/hooks/use-playlist-conversion";
 import { useSpotifyPlaylists } from "@/hooks/use-spotify-playlists";
-import { AlertCircle, Music2, PlayCircle } from "lucide-react";
+import { Track } from "@/lib/types";
+import { Loader2, Music2, PlayCircle } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export function PlaylistTransfer() {
-  const { data: playlists, isLoading, refetch } = useSpotifyPlaylists();
-  const { mutate: convertPlaylist, isPending } = usePlaylistConversion();
-  const [currentProgress, setCurrentProgress] = useState(0);
-  const [currentSong, setCurrentSong] = useState<{
+  const [selectedPlaylist, setSelectedPlaylist] = useState<{
+    id: string;
     name: string;
-    artists: string;
   } | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [failedSongs, setFailedSongs] = useState<Track[]>([]);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const { playlists, isLoading, refetch } = useSpotifyPlaylists();
+  const { convertPlaylist, isPending } = usePlaylistConversion();
 
   const handleTransfer = (playlistId: string, playlistName: string) => {
-    setCurrentProgress(0);
+    setSelectedPlaylist({ id: playlistId, name: playlistName });
+    setFailedSongs([]);
+    setIsCompleted(false);
 
     convertPlaylist(
       {
         playlistId,
         playlistName,
-        onProgress: (progress, song, failed) => {
-          setCurrentProgress(progress);
-          setCurrentSong(song);
-
-          // Only toast failed songs at the end
-          if (progress === 100 && failed.length > 0) {
-            failed.forEach((song) => {
-              toast.error(
-                `Failed to transfer: ${song.name} by ${song.artists}`,
-              );
-            });
-          }
+        onProgress: (progress, currentSong, failed) => {
+          setProgress(progress);
+          setFailedSongs(failed);
         },
       },
       {
         onSuccess: () => {
-          toast.success(`${playlistName} transferred successfully!`);
-          setCurrentSong(null);
-          setCurrentProgress(0);
+          toast.success("Playlist transferred successfully!");
+          setProgress(0);
+          setIsCompleted(true);
         },
         onError: (error) => {
-          toast.error(`Failed to transfer ${playlistName}`);
+          toast.error("Failed to transfer playlist");
           console.error("Transfer error:", error);
-          setCurrentSong(null);
-          setCurrentProgress(0);
+          setProgress(0);
+          setIsCompleted(true);
         },
       },
     );
   };
 
-  if (!playlists?.length && !isLoading) {
+  if (!playlists?.length) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="space-y-4"
+      <Button
+        onClick={() => refetch()}
+        disabled={isLoading}
+        className="glass-button w-full"
       >
-        <Alert variant="destructive" className="glass-card border-red-500/20">
-          <AlertCircle className="h-4 w-4" />
-          <span className="ml-2">
-            No playlists found in your Spotify account
-          </span>
-        </Alert>
-        <Button onClick={() => refetch()} className="glass-button w-full">
-          <Music2 className="mr-2 h-5 w-5" />
-          Refresh Playlists
-        </Button>
-      </motion.div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="text-center py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-12 w-48 bg-white/10 rounded-lg mx-auto" />
-          <div className="h-4 w-32 bg-white/10 rounded mx-auto" />
-        </div>
-      </div>
+        {isLoading ? (
+          <span className="animate-pulse">Loading playlists...</span>
+        ) : (
+          <>
+            <Music2 className="mr-2 text-blue-400" />
+            <span className="gradient-text from-blue-400 to-indigo-400">
+              Load Your Playlists
+            </span>
+          </>
+        )}
+      </Button>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {currentSong && (
-        <div className="glass-card p-3 md:p-4 rounded-xl">
-          <div className="space-y-2">
-            <p className="text-xs md:text-sm text-white/60">
-              Currently transferring:
-            </p>
-            <p className="text-sm md:text-base font-medium truncate">
-              {currentSong.name}
-            </p>
-            <p className="text-xs md:text-sm text-white/60 truncate">
-              {currentSong.artists}
-            </p>
-            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-400 to-purple-400 transition-all duration-300"
-                style={{ width: `${currentProgress}%` }}
-              />
-            </div>
+    <div className="space-y-4">
+      {isPending && selectedPlaylist && (
+        <div className="glass-card p-4 rounded-xl space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-white/60">
+              Transferring {selectedPlaylist.name}
+            </span>
+            <span className="text-white/80">{Math.round(progress)}%</span>
           </div>
+          <Progress value={progress} className="h-2" />
         </div>
       )}
 
-      <ScrollArea className="h-[300px] md:h-[400px] pr-4">
-        <div className="space-y-3 md:space-y-4">
-          {playlists?.map((playlist, index) => (
+      <ScrollArea className="h-[300px] md:h-[400px] rounded-xl glass-card p-4">
+        <div className="space-y-3">
+          {playlists.map((playlist, index) => (
             <motion.div
               key={playlist.id}
               initial={{ opacity: 0, y: 20 }}
@@ -152,13 +128,29 @@ export function PlaylistTransfer() {
                   disabled={isPending}
                   className="glass-button text-xs md:text-sm px-3 md:px-4"
                 >
-                  Transfer
+                  {isPending && selectedPlaylist?.id === playlist.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Transfer"
+                  )}
                 </Button>
               </div>
             </motion.div>
           ))}
         </div>
       </ScrollArea>
+
+      {isCompleted && failedSongs.length > 0 && selectedPlaylist && (
+        <div className="space-y-4">
+          <RetryFailedButton
+            failedSongs={failedSongs}
+            playlistName={selectedPlaylist.name}
+          />
+          <p className="text-sm text-red-400/80 text-center">
+            {failedSongs.length} songs failed to transfer
+          </p>
+        </div>
+      )}
     </div>
   );
 }

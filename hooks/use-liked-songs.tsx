@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { getLikedSongs } from "@/actions/spotify";
+import { useQuery } from "@tanstack/react-query";
 
 export function useLikedSongs() {
-  return useQuery({
+  const { data: likedSongs, isLoading } = useQuery({
     queryKey: ["liked-songs"],
     queryFn: async () => {
       const token = sessionStorage.getItem("spotify_access_token");
@@ -14,4 +14,6 @@ export function useLikedSongs() {
       return getLikedSongs(token);
     },
   });
+
+  return { likedSongs, isLoading };
 }

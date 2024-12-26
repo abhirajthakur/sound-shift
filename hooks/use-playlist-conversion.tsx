@@ -2,28 +2,12 @@
 
 import { getPlaylistTracks } from "@/actions/spotify";
 import { addToPlaylist, createPlaylist, searchVideo } from "@/actions/youtube";
+import { ConversionInput, Track } from "@/lib/types";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-interface Track {
-  name: string;
-  artists: string;
-  duration: number;
-}
-
-interface ConversionInput {
-  playlistId?: string;
-  playlistName: string;
-  tracks?: Track[];
-  onProgress: (
-    progress: number,
-    currentSong: Track,
-    failedSongs: Track[],
-  ) => void;
-}
-
 export function usePlaylistConversion() {
-  return useMutation({
+  const { mutate: convertPlaylist, isPending } = useMutation({
     mutationFn: async ({
       playlistId,
       playlistName,
@@ -79,4 +63,6 @@ export function usePlaylistConversion() {
       return { playlist: youtubePlaylist, failedSongs: failed };
     },
   });
+
+  return { convertPlaylist, isPending };
 }

@@ -4,7 +4,11 @@ import { getUserPlaylists, type SpotifyPlaylist } from "@/actions/spotify";
 import { useQuery } from "@tanstack/react-query";
 
 export function useSpotifyPlaylists() {
-  return useQuery<SpotifyPlaylist[]>({
+  const {
+    data: playlists,
+    isLoading,
+    refetch,
+  } = useQuery<SpotifyPlaylist[]>({
     queryKey: ["spotify-playlists"],
     queryFn: async () => {
       const token = sessionStorage.getItem("spotify_access_token");
@@ -14,4 +18,10 @@ export function useSpotifyPlaylists() {
       return getUserPlaylists(token);
     },
   });
+
+  return {
+    playlists,
+    isLoading,
+    refetch,
+  };
 }
