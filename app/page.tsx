@@ -1,5 +1,6 @@
 "use client";
 
+import { GitHubLink } from "@/components/github-link";
 import { LoginButtons } from "@/components/login-buttons";
 import { TransferLayout } from "@/components/transfer/transfer-layout";
 import { useAuthState } from "@/hooks/use-auth-state";
@@ -17,6 +18,8 @@ export default function Home() {
       <div className="fixed inset-0">
         <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/30 via-transparent to-purple-500/30 animate-gradient" />
       </div>
+
+      <GitHubLink />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

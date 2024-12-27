@@ -32,11 +32,9 @@ export function usePlaylistConversion() {
         tracks = await getPlaylistTracks(spotifyToken, playlistId);
       }
 
-      // Create YouTube playlist
       const youtubePlaylist = await createPlaylist(youtubeToken, playlistName);
       const failed: Track[] = [];
 
-      // Convert each track
       for (let i = 0; i < tracks.length; i++) {
         const track = tracks[i];
         const searchQuery = `${track.name} ${track.artists}`;

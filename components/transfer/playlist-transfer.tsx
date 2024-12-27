@@ -7,7 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePlaylistConversion } from "@/hooks/use-playlist-conversion";
 import { useSpotifyPlaylists } from "@/hooks/use-spotify-playlists";
 import { Track } from "@/lib/types";
-import { Loader2, Music2, PlayCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Loader2, Music2, PlayCircle, RefreshCw } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";
@@ -24,6 +25,14 @@ export function PlaylistTransfer() {
   const { playlists, isLoading, refetch } = useSpotifyPlaylists();
   const { convertPlaylist, isPending } = usePlaylistConversion();
 
+  const handleRefresh = async () => {
+    toast.promise(refetch(), {
+      loading: "Refreshing playlists...",
+      success: "Playlists refreshed!",
+      error: "Failed to refresh playlists",
+    });
+  };
+
   const handleTransfer = (playlistId: string, playlistName: string) => {
     setSelectedPlaylist({ id: playlistId, name: playlistName });
     setFailedSongs([]);
@@ -33,7 +42,7 @@ export function PlaylistTransfer() {
       {
         playlistId,
         playlistName,
-        onProgress: (progress, currentSong, failed) => {
+        onProgress: (progress, _currentSong, failed) => {
           setProgress(progress);
           setFailedSongs(failed);
         },
@@ -77,6 +86,23 @@ export function PlaylistTransfer() {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button
+          onClick={handleRefresh}
+          disabled={isLoading}
+          // variant="ghost"
+          size="sm"
+          className="glass-button text-white hover:text-gray-800"
+        >
+          <RefreshCw
+            className={cn("w-4 h-4 mr-2", {
+              "animate-spin": isLoading,
+            })}
+          />
+          Refresh
+        </Button>
+      </div>
+
       {isPending && selectedPlaylist && (
         <div className="glass-card p-4 rounded-xl space-y-3">
           <div className="flex items-center justify-between text-sm">
@@ -126,7 +152,8 @@ export function PlaylistTransfer() {
                 <Button
                   onClick={() => handleTransfer(playlist.id, playlist.name)}
                   disabled={isPending}
-                  className="glass-button text-xs md:text-sm px-3 md:px-4"
+                  className="glass-button text-white hover:text-gray-800 min-w-[80px]"
+                  // className="glass-button text-xs md:text-sm px-3 md:px-4"
                 >
                   {isPending && selectedPlaylist?.id === playlist.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
