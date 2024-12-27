@@ -25,12 +25,8 @@ export function PlaylistTransfer() {
   const { playlists, isLoading, refetch } = useSpotifyPlaylists();
   const { convertPlaylist, isPending } = usePlaylistConversion();
 
-  const handleRefresh = async () => {
-    toast.promise(refetch(), {
-      loading: "Refreshing playlists...",
-      success: "Playlists refreshed!",
-      error: "Failed to refresh playlists",
-    });
+  const handleRefresh = () => {
+    refetch();
   };
 
   const handleTransfer = (playlistId: string, playlistName: string) => {
@@ -42,7 +38,7 @@ export function PlaylistTransfer() {
       {
         playlistId,
         playlistName,
-        onProgress: (progress, _currentSong, failed) => {
+        onProgress: (progress, currentSong, failed) => {
           setProgress(progress);
           setFailedSongs(failed);
         },
@@ -66,7 +62,7 @@ export function PlaylistTransfer() {
   if (!playlists?.length) {
     return (
       <Button
-        onClick={() => refetch()}
+        onClick={handleRefresh}
         disabled={isLoading}
         className="glass-button w-full"
       >
@@ -90,82 +86,78 @@ export function PlaylistTransfer() {
         <Button
           onClick={handleRefresh}
           disabled={isLoading}
-          // variant="ghost"
           size="sm"
-          className="glass-button text-white hover:text-gray-800"
+          className="glass-button"
         >
           <RefreshCw
-            className={cn("w-4 h-4 mr-2", {
+            className={cn("w-4 h-4 text-blue-400", {
               "animate-spin": isLoading,
             })}
           />
-          Refresh
+          <span className="gradient-text from-blue-400 to-indigo-400">
+            Refresh
+          </span>
         </Button>
       </div>
 
-      {isPending && selectedPlaylist && (
-        <div className="glass-card p-4 rounded-xl space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-white/60">
-              Transferring {selectedPlaylist.name}
-            </span>
-            <span className="text-white/80">{Math.round(progress)}%</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-      )}
-
-      <ScrollArea className="h-[300px] md:h-[400px] rounded-xl glass-card p-4">
-        <div className="space-y-3">
+      <ScrollArea className="h-[300px] rounded-xl glass-card p-4">
+        <div className="space-y-2">
           {playlists.map((playlist, index) => (
             <motion.div
               key={playlist.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="glass-card p-3 md:p-4 rounded-xl hover-scale"
+              transition={{ delay: index * 0.1 }}
             >
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center space-x-3 min-w-0">
-                  {playlist.images[0] ? (
-                    <Image
-                      src={playlist.images[0].url}
-                      alt={playlist.name}
-                      width={48}
-                      height={48}
-                      className="h-12 w-12 md:h-16 md:w-16 rounded-lg object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 md:h-16 md:w-16 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
-                      <PlayCircle className="h-6 w-6 md:h-8 md:w-8 text-white/40" />
+              <div className="glass-card p-3 rounded-xl hover-scale">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center space-x-3">
+                    {playlist.images[0] ? (
+                      <Image
+                        src={playlist.images[0].url}
+                        alt={playlist.name}
+                        width={48}
+                        height={48}
+                        className="h-12 w-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <PlayCircle className="h-12 w-12 text-white/60" />
+                    )}
+                    <div>
+                      <h3 className="font-medium">{playlist.name}</h3>
+                      <p className="text-sm text-white/60">
+                        {playlist.tracks.total} tracks
+                      </p>
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <h3 className="font-medium text-sm md:text-base truncate">
-                      {playlist.name}
-                    </h3>
-                    <p className="text-xs md:text-sm text-white/60">
-                      {playlist.tracks.total} tracks
-                    </p>
                   </div>
+                  <Button
+                    onClick={() => handleTransfer(playlist.id, playlist.name)}
+                    disabled={isPending}
+                    className="glass-button min-w-[80px]"
+                  >
+                    {isPending && selectedPlaylist?.id === playlist.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span className="gradient-text from-blue-400 to-indigo-400">
+                        Transfer
+                      </span>
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => handleTransfer(playlist.id, playlist.name)}
-                  disabled={isPending}
-                  className="glass-button text-white hover:text-gray-800 min-w-[80px]"
-                  // className="glass-button text-xs md:text-sm px-3 md:px-4"
-                >
-                  {isPending && selectedPlaylist?.id === playlist.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Transfer"
-                  )}
-                </Button>
               </div>
             </motion.div>
           ))}
         </div>
       </ScrollArea>
+
+      {isPending && selectedPlaylist && (
+        <div className="space-y-2">
+          <Progress value={progress} className="h-2" />
+          <p className="text-sm text-muted-foreground text-center">
+            Converting playlist... {Math.round(progress)}%
+          </p>
+        </div>
+      )}
 
       {isCompleted && failedSongs.length > 0 && selectedPlaylist && (
         <div className="space-y-4">
